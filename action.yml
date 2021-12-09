@@ -1,0 +1,119 @@
+name: 'Build And Push'
+description: GitHub Action for build and push docker images - Sysdig way'
+inputs:
+  image_name:
+    description: "name of the docker image. Example: redis-6"
+    required: true
+
+  image_description:
+    description: "description of the docker image. Example: sysdig redis-6 image"
+    required: true
+
+  context_path:
+    description: "path to docker directory (where Dockerfile is)"
+    required: true
+
+  # wether to create git tag and push the image
+  dry_run:
+    description: "whether to actually create git tag and push the image"
+    required: false
+    default: "false"
+  # flags for pushing to artifactory or quay
+  push_to_artifactory:
+    default: "true"
+    required: false
+  push_to_quay:
+    default: "false"
+    required: false
+
+  artifactory_prefix:
+    description: "prefix for artifactory repository. Example: docker.internal.sysdig.com"
+    default: "docker.internal.sysdig.com"
+    required: false
+  quay_prefix:
+    description: "prefix for quay repository. Example: docker.internal.sysdig.com"
+    default: "quay.io/sysdig"
+    required: false
+
+  artifactory_username:
+    description: "Artifactory Username Secret"
+    required: false
+  artifactory_password:
+    description: "Artifactory Password Secret"
+    required: false
+  quay_username:
+    description: "Quay Username Secret"
+    required: false
+  quay_password:
+    description: "Quay Password Secret"
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v2
+
+    # NOTE: the following workaround is needed to explicitly set up the context for buildx when running on DinD
+    - name: Custom docker context for use with self_hosted runners
+      shell: bash
+      run: if ! (docker context ls | grep -q mycontext) ;then docker context create mycontext; fi
+
+    - run: ${{ github.action_path }}/main.sh
+      shell: bash
+
+    - name: Login to Artifactory
+      uses: docker/login-action@v1
+      with:
+        registry: docker.internal.sysdig.com
+        username: ${{ inputs.artifactory_username }}
+        password: ${{ inputs.artifactory_password }}
+
+    - name: Login to Quay
+      uses: docker/login-action@v1
+      with:
+        registry: quay.io
+        username: ${{ secrets.quay_username }}
+        password: ${{ secrets.quay_password }}
+
+    - name: Bump container version and create new github tag
+      id: bump_version
+      uses: mathieudutour/github-tag-action@v5.6
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        tag_prefix: container/${{ inputs.image_name }}-
+        dry_run: ${{ inputs.dry_run }}
+
+    - name: Build images names
+      id: build_image_names
+      env:
+        PUSH_TO_ARTIFACTORY: ${{ inputs.push_to_artifactory }}
+        PUSH_TO_QUAY: ${{ inputs.push_to_quay }}
+      run: |
+        json='[]'
+        $PUSH_TO_ARTIFACTORY && json=$(echo $json | jq -cr ". += [\"${{inputs.artifactory_prefix}}/${{inputs.image_name}}\"]")
+        $PUSH_TO_QUAY && json=$(echo $json | jq -cr ". += [\"${{inputs.quay_prefix}}/${{inputs.image_name}}\"]")
+        names=$(echo $json | jq -r '. | join(",")')
+        echo "::set-output name=names::${names}"
+
+    - name: Build container meta
+      id: meta
+      uses: docker/metadata-action@v3
+      with:
+        images: ${{ steps.build_image_names.outputs.names }}
+        flavor: |
+          latest=auto
+          prefix=
+          suffix=
+        labels: |
+          org.opencontainers.image.title=${{ inputs.image_name }}
+          org.opencontainers.image.description=${{ inputs.image_description }}
+        tags: |
+          type=raw,value=${{ steps.bump_version.outputs.new_version }}
+
+    - name: Build and push container
+      uses: docker/build-push-action@v2
+      with:
+        context: ${{ inputs.context_path }}
+        push: ${{ ! inputs.dry_run }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
