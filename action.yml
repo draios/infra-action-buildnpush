@@ -16,7 +16,7 @@ inputs:
   dockerfile:
     description: "path to docker file (defaults to {{context_path}}/Dockerfile)"
     required: false
-    default: ${{inputs.context_path}}/Dockerfile
+    default: Dockerfile
 
   # wether to create git tag and push the image
   dry_run:
