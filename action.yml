@@ -68,6 +68,7 @@ runs:
         endpoint: mycontext
 
     - name: Login to Artifactory
+      if: ${{ inputs.push_to_artifactory }}
       uses: docker/login-action@v1
       with:
         registry: docker.internal.sysdig.com
@@ -75,6 +76,7 @@ runs:
         password: ${{ inputs.artifactory_password }}
 
     - name: Login to Quay
+      if: ${{ inputs.push_to_quay }}
       uses: docker/login-action@v1
       with:
         registry: quay.io
