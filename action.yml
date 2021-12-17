@@ -1,5 +1,12 @@
 name: 'Build And Push'
 description: GitHub Action for build and push docker images - Sysdig way'
+outputs:
+  names:
+    description: "Image names"
+  tags:
+    description: "git tag version calculated"
+  labels:
+    description: "Labels added to cotnainer image"
 inputs:
   image_name:
     description: "name of the docker image. Example: redis-6"
@@ -123,6 +130,12 @@ runs:
           org.opencontainers.image.description=${{ inputs.image_description }}
         tags: |
           type=raw,value=${{ steps.bump_version.outputs.new_version }}
+
+    - name: "Set outputs"
+      shell: bash
+      run: |
+        echo "::set-output name=tags::${{ steps.meta.outputs.tags }}"
+        echo "::set-output name=labels::${{ steps.meta.outputs.labels }}"
 
     - name: Build and push container
       uses: docker/build-push-action@v2
