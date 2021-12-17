@@ -53,6 +53,10 @@ inputs:
   artifactory_password:
     description: "Artifactory Password Secret"
     required: false
+  artifactory_url:
+    description: "Artifactory URL"
+    required: false
+    default: "docker.internal.sysdig.com"
   quay_username:
     description: "Quay Username Secret"
     required: false
@@ -83,7 +87,7 @@ runs:
       uses: docker/login-action@v1
       if: ${{inputs.push_to_artifactory == 'true'}}
       with:
-        registry: docker.internal.sysdig.com
+        registry: ${{ inputs.artifactory_url }}
         username: ${{ inputs.artifactory_username }}
         password: ${{ inputs.artifactory_password }}
 
