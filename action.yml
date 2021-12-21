@@ -145,7 +145,7 @@ runs:
       uses: docker/build-push-action@v2
       with:
         context: ${{ inputs.context_path }}
-        file: ${{ inputs.dockerfile }}
+        file: ${{ inputs.context_path }}/${{ inputs.dockerfile }}
         push: ${{ ! inputs.dry_run }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
