@@ -3,10 +3,13 @@ description: GitHub Action for build and push docker images - Sysdig way'
 outputs:
   names:
     description: "Image names"
+    value: ${{ steps.build_image_names.outputs.names }}
   tags:
     description: "git tag version calculated"
+    value: ${{ steps.meta.outputs.tags }}
   labels:
-    description: "Labels added to cotnainer image"
+    description: "Labels added to container image"
+    value: ${{ steps.meta.outputs.labels }}
 inputs:
   image_name:
     description: "name of the docker image. Example: redis-6"
@@ -49,9 +52,11 @@ inputs:
 
   artifactory_username:
     description: "Artifactory Username Secret"
+    default: ""
     required: false
   artifactory_password:
     description: "Artifactory Password Secret"
+    default: ""
     required: false
   artifactory_url:
     description: "Artifactory URL"
@@ -59,9 +64,11 @@ inputs:
     default: "docker.internal.sysdig.com"
   quay_username:
     description: "Quay Username Secret"
+    default: ""
     required: false
   quay_password:
     description: "Quay Password Secret"
+    default: ""
     required: false
   github_token:
     description: "GITHUB Token used to tag the repo"
@@ -85,7 +92,7 @@ runs:
 
     - name: Login to Artifactory
       uses: docker/login-action@v1
-      if: ${{inputs.push_to_artifactory == 'true'}}
+      if: ${{inputs.artifactory_username != '' && inputs.artifactory_password != '' }}
       with:
         registry: ${{ inputs.artifactory_url }}
         username: ${{ inputs.artifactory_username }}
@@ -93,7 +100,7 @@ runs:
 
     - name: Login to Quay
       uses: docker/login-action@v1
-      if: ${{inputs.push_to_quay == 'true' }}
+      if: ${{inputs.quay_username != '' && inputs.quay_password != ''  }}
       with:
         registry: quay.io
         username: ${{ inputs.quay_username }}
@@ -135,17 +142,11 @@ runs:
         tags: |
           type=raw,value=${{ steps.bump_version.outputs.new_version }}
 
-    - name: "Set outputs"
-      shell: bash
-      run: |
-        echo "::set-output name=tags::${{ steps.meta.outputs.tags }}"
-        echo "::set-output name=labels::${{ steps.meta.outputs.labels }}"
-
     - name: Build and push container
       uses: docker/build-push-action@v2
       with:
         context: ${{ inputs.context_path }}
-        file: ${{ inputs.dockerfile }}
+        file: ${{ inputs.context_path }}/${{ inputs.dockerfile }}
         push: ${{ ! inputs.dry_run }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
