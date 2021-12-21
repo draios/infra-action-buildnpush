@@ -147,6 +147,6 @@ runs:
       with:
         context: ${{ inputs.context_path }}
         file: ${{ inputs.context_path }}/${{ inputs.dockerfile }}
-        push: ${{ ! inputs.dry_run }}
+        push: ${{ inputs.dry_run != "true" }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
