@@ -49,9 +49,11 @@ inputs:
 
   artifactory_username:
     description: "Artifactory Username Secret"
+    default: ""
     required: false
   artifactory_password:
     description: "Artifactory Password Secret"
+    default: ""
     required: false
   artifactory_url:
     description: "Artifactory URL"
@@ -59,9 +61,11 @@ inputs:
     default: "docker.internal.sysdig.com"
   quay_username:
     description: "Quay Username Secret"
+    default: ""
     required: false
   quay_password:
     description: "Quay Password Secret"
+    default: ""
     required: false
   github_token:
     description: "GITHUB Token used to tag the repo"
@@ -85,7 +89,7 @@ runs:
 
     - name: Login to Artifactory
       uses: docker/login-action@v1
-      if: ${{inputs.push_to_artifactory == 'true'}}
+      if: ${{inputs.artifactory_username != '' && inputs.artifactory_password != '' }}
       with:
         registry: ${{ inputs.artifactory_url }}
         username: ${{ inputs.artifactory_username }}
@@ -93,7 +97,7 @@ runs:
 
     - name: Login to Quay
       uses: docker/login-action@v1
-      if: ${{inputs.push_to_quay == 'true' }}
+      if: ${{inputs.quay_username != '' && inputs.quay_password != ''  }}
       with:
         registry: quay.io
         username: ${{ inputs.quay_username }}

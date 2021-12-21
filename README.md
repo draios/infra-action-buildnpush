@@ -20,20 +20,23 @@ GitHub Action for build and push docker images, Sysdig way
 - `artifactory_prefix`: prefix for artifactory repository. Default: `docker.internal.sysdig.com`
 - `quay_prefix`: prefix for quay repository. Default: `quay.io/sysdig`
 
-- `artifactory_username`: "Artifactory Username Secret (Needed only if `push_to_artifactory` is `true`) "
-- `artifactory_password`: "Artifactory Password Secret (Needed only if `push_to_artifactory` is `true`)"
+- `artifactory_username`: "Artifactory Username Secret (default is empty string) "
+- `artifactory_password`: "Artifactory Password Secret (default is empty string)"
 - `artifactory_url`: Artifactory URL
 
-- `quay_username`: "Quay Username Secret (Needed only if `push_to_quay` is `true`)"
-- `quay_password`: "Quay Password Secret (Needed only if `push_to_quay` is `true`)"
+- `quay_username`: "Quay Username Secret (default is empty string)"
+- `quay_password`: "Quay Password Secret (default is empty string)"
 
+## Caveats
+
+- If `artifactory_username`/`artifactory_password` tuple is empty the action will skip login to artifactory
+- If `quay_username`/`quay_password` tuple is empty the action will skip login to quay
 
 ## Outputs
 
 - `names`: Image name(s) generated
 - `tags`: calculate git tag
 - `labels`: Labels added to container image(s)
-
 
 ## Example workflow
 
