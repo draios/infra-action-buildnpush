@@ -136,6 +136,7 @@ runs:
     # In some edge cases we need to append a string
     # See "image_tag_string_suffix" in inputs section
     - name: Add optional string suffix in img tag
+      shell: bash
       id: image_tag
       run: |
         [[ -n "${{ inputs.image_tag_string_prefix }}" ]] && _ver=${{ steps.bump_version.outputs.new_version }}-${{ inputs.image_tag_string_suffix }} || _ver=${{ steps.bump_version.outputs.new_version }}
