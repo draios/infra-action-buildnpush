@@ -19,6 +19,11 @@ inputs:
     description: "description of the docker image. Example: sysdig redis-6 image"
     required: true
 
+  image_tag_string_suffix:
+    description: "optional string that will be added after the semver in the tag like: xxx/myimg:0.0.1-string instead of xxx/myimg:0.0.1"
+    default: ""
+    required: false
+
   context_path:
     description: "path to context directory (where the build starts)"
     required: true
@@ -127,6 +132,16 @@ runs:
         names=$(echo $json | jq -r '. | join(",")')
         echo "::set-output name=names::${names}"
 
+    # By default the img tag is the bumped version of the last tag
+    # In some edge cases we need to append a string
+    # See "image_tag_string_suffix" in inputs section
+    - name: Add optional string suffix in img tag
+      shell: bash
+      id: image_tag
+      run: |
+        [[ -n "${{ inputs.image_tag_string_suffix }}" ]] && _ver=${{ steps.bump_version.outputs.new_version }}-${{ inputs.image_tag_string_suffix }} || _ver=${{ steps.bump_version.outputs.new_version }}
+        echo ::set-output name=ver::${_ver}
+
     - name: Build container meta
       id: meta
       uses: docker/metadata-action@v3
@@ -140,7 +155,7 @@ runs:
           org.opencontainers.image.title=${{ inputs.image_name }}
           org.opencontainers.image.description=${{ inputs.image_description }}
         tags: |
-          type=raw,value=${{ steps.bump_version.outputs.new_version }}
+          type=raw,value=${{ steps.image_tag.outputs.ver }}
 
     - name: Build and push container
       uses: docker/build-push-action@v2
