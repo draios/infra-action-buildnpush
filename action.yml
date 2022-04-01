@@ -82,7 +82,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/setup-python@v2
+    - uses: actions/setup-python@v3.1.0
 
     # NOTE: the following workaround is needed to explicitly set up the context for buildx when running on DinD
     - name: Custom docker context for use with self_hosted runners
