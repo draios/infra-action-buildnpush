@@ -79,6 +79,11 @@ inputs:
     description: "GITHUB Token used to tag the repo"
     required: true
 
+  upload_artifact:
+    description: "whether to upload the docker image as gh artifact"
+    required: false
+    default: "false"
+
 runs:
   using: "composite"
   steps:
@@ -165,3 +170,12 @@ runs:
         push: ${{ inputs.dry_run != 'true' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+        outputs: type=docker,dest=/tmp/image.tar
+
+    - name: Upload docker image as artifact
+      uses: actions/upload-artifact@v2
+      if: ${{ inputs.upload_artifact == 'true' }}
+      with:
+        name: image
+        path: /tmp/image.tar
+        retention-days: 2
