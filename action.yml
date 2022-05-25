@@ -170,7 +170,9 @@ runs:
         push: ${{ inputs.dry_run != 'true' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-        outputs: type=docker,dest=/tmp/image.tar
+        outputs:
+        - type=image
+        - type=docker,dest=/tmp/image.tar
 
     - name: Upload docker image as artifact
       uses: actions/upload-artifact@v2
