@@ -163,16 +163,26 @@ runs:
           type=raw,value=${{ steps.image_tag.outputs.ver }}
 
     - name: Build and push container
+      if: ${{ inputs.dry_run == 'false' }}
       uses: docker/build-push-action@v2
       with:
         context: ${{ inputs.context_path }}
         file: ${{ inputs.context_path }}/${{ inputs.dockerfile }}
-        push: ${{ inputs.dry_run != 'true' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-        outputs:
-        - type=image
-        - type=docker,dest=/tmp/image.tar
+        outputs: |
+          type=registry
+          type=docker,dest=/tmp/image.tar
+
+    - name: Build and push container
+      if: ${{ inputs.dry_run == 'true' }}
+      uses: docker/build-push-action@v2
+      with:
+        context: ${{ inputs.context_path }}
+        file: ${{ inputs.context_path }}/${{ inputs.dockerfile }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        outputs: type=docker,dest=/tmp/image.tar
 
     - name: Upload docker image as artifact
       uses: actions/upload-artifact@v2
