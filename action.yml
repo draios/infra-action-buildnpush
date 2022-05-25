@@ -177,7 +177,7 @@ runs:
       shell: bash
       run: |
         image=`echo "${{ steps.meta.outputs.tags }}" | head -n 1`
-        docker save $image -o dest=/tmp/image.tar
+        docker save $image -o /tmp/image.tar
 
     - name: Upload docker image as artifact
       uses: actions/upload-artifact@v2
