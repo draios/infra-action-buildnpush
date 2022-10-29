@@ -122,6 +122,7 @@ runs:
       with:
         github_token: ${{ inputs.github_token }}
         tag_prefix: container/${{ inputs.image_name }}-
+        fetch_all_tags: true
         dry_run: ${{ inputs.dry_run }}
 
     - name: Build images names
