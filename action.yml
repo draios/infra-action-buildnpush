@@ -33,6 +33,11 @@ inputs:
     required: false
     default: Dockerfile
 
+  # Needed when run_scanner is true
+  sysdig_secure_token:
+    description: "API token for Sysdig Scanning auth"
+    required: false
+
   # wether to create git tag and push the image
   dry_run:
     description: "whether to actually create git tag and push the image"
@@ -94,6 +99,40 @@ inputs:
     description: "whether to upload the docker image as gh artifact"
     required: false
     default: "false"
+
+  run_scanner:
+    description: "Enables the sysdig security scanner"
+    required: false
+    default: "false"
+
+  scan_type:
+    description: "The type of scan to perform"
+    required: false
+    default: "both" # "legacy","new" or "both"
+
+  # Sysdig Scanner legacy
+  ignore-failed-scan:
+    description: "Don't fail the execution of this action even if the scan result is FAILED"
+    required: false
+    default: "true"
+
+  # Sysdig Scanner legacy
+  severity:
+    description: "Severity level to fail the scan"
+    required: false
+    default: "high"
+
+  # Sysdig Scanner legacy
+  sysdig-skip-tls:
+    description: "Skip TLS verification when calling secure endpoints."
+    required: false
+    default: "false"
+
+  # Sysdig Scanner legacy
+  policy-list:
+    description: "Comma separated list of policies to include"
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -184,7 +223,39 @@ runs:
         tags: |
           type=raw,value=${{ steps.image_tag.outputs.ver }}
 
-    - name: Build and push container
+    - name: Build container
+      uses: docker/build-push-action@v2
+      with:
+        context: ${{ inputs.context_path }}
+        file: ${{ inputs.context_path }}/${{ inputs.dockerfile }}
+        push: false
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        load: true
+
+    # Scan only one container name
+    - name: Local container tag
+      if: inputs.run_scanner == 'true'
+      shell: bash
+      id: container
+      run: |
+        CONTAINER_TAG=$(echo -e '${{steps.meta.outputs.tags}}' | head -n 1)
+        echo "container-tag=${CONTAINER_TAG}" >> $GITHUB_OUTPUT
+
+    - name: Scan image
+      if: inputs.run_scanner == 'true'
+      uses: draios/infra-action-sysdig-scan@v0.0.2
+      with:
+        image-tag: ${{ steps.container.outputs.container-tag }}
+        sysdig-secure-token: ${{ inputs.sysdig_secure_token }}
+        scan-type: ${{ inputs.scan_type }}
+        sysdig-secure-url: "https://prodmon.app.sysdig.com"
+        severity: ${{ inputs.severity }}
+        ignore-failed-scan: ${{ inputs.ignore-failed-scan }}
+        sysdig-skip-tls: ${{ inputs.sysdig-skip-tls }}
+        policy-list: ${{ inputs.policy-list }}
+
+    - name: Push container
       uses: docker/build-push-action@v2
       with:
         context: ${{ inputs.context_path }}
