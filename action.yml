@@ -111,12 +111,6 @@ inputs:
     default: "both" # "legacy","new" or "both"
 
   # Sysdig Scanner legacy
-  ignore-failed-scan:
-    description: "Don't fail the execution of this action even if the scan result is FAILED"
-    required: false
-    default: "true"
-
-  # Sysdig Scanner legacy
   severity:
     description: "Severity level to fail the scan"
     required: false
@@ -251,7 +245,6 @@ runs:
         scan-type: ${{ inputs.scan_type }}
         sysdig-secure-url: "https://prodmon.app.sysdig.com"
         severity: ${{ inputs.severity }}
-        ignore-failed-scan: ${{ inputs.ignore-failed-scan }}
         sysdig-skip-tls: ${{ inputs.sysdig-skip-tls }}
         policy-list: ${{ inputs.policy-list }}
 
