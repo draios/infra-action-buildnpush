@@ -122,7 +122,7 @@ inputs:
     required: false
     default: "false"
 
-  # Sysdig Scanner legacy
+  # Sysdig Scanner
   policy-list:
     description: "Comma separated list of policies to include"
     required: false
