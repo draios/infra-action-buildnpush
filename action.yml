@@ -228,6 +228,8 @@ runs:
         load: true
 
     # Scan only one container name
+    # This is needed because if you add/enable the push to quay.io, gar or artifactory (or all of them), there is a list of images with different registries.
+    # Both are the same but we just need one to do the scanning. Usually artifactory is the first one of the list
     - name: Local container tag
       if: inputs.run_scanner == 'true'
       shell: bash
