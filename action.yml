@@ -272,7 +272,7 @@ runs:
 
     - name: Push container
       uses: docker/build-push-action@v3
-      if: ${{ input.push == 'true' }}
+      if: ${{ inputs.push == 'true' }}
       with:
         context: ${{ inputs.context_path }}
         file: ${{ inputs.context_path }}/${{ inputs.dockerfile }}
