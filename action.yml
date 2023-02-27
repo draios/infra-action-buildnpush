@@ -146,7 +146,7 @@ runs:
   steps:
     - uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: '3.11'
 
     # NOTE: the following workaround is needed to explicitly set up the context for buildx when running on DinD
     - name: Custom docker context for use with self_hosted runners
@@ -159,6 +159,7 @@ runs:
       with:
         endpoint: mycontext
 
+# Login to registries
     - name: Login to Artifactory
       uses: docker/login-action@v2
       if: ${{inputs.artifactory_username != '' && inputs.artifactory_password != '' }}
@@ -183,20 +184,20 @@ runs:
         username: _json_key
         password: ${{ inputs.gar_password }}
 
+# Bump version and create git tag
     - name: Bump container version and create new github tag
       id: bump_version
       uses: mathieudutour/github-tag-action@v6.1
-      if: ${{ inputs.build == 'true' }}
       with:
         github_token: ${{ inputs.github_token }}
         tag_prefix: container/${{ inputs.image_name }}-
         fetch_all_tags: true
-        dry_run: ${{ inputs.dry_run }}
+        # we must create a git tag only when pushing
+        dry_run: ${{ inputs.dry_run || inputs.push == 'false' }}
 
     - name: Build images names
       id: build_image_names
       shell: bash
-      if: ${{ inputs.build == 'true' }}
       env:
         PUSH_TO_ARTIFACTORY: ${{ inputs.push_to_artifactory }}
         PUSH_TO_QUAY: ${{ inputs.push_to_quay }}
@@ -215,7 +216,6 @@ runs:
     - name: Add optional string suffix in img tag
       shell: bash
       id: image_tag
-      if: ${{ inputs.build == 'true' }}
       run: |
         [[ -n "${{ inputs.image_tag_string_suffix }}" ]] && _ver=${{ steps.bump_version.outputs.new_version }}-${{ inputs.image_tag_string_suffix }} || _ver=${{ steps.bump_version.outputs.new_version }}
         echo "ver=${_ver}" >> $GITHUB_OUTPUT
@@ -223,7 +223,6 @@ runs:
     - name: Build container meta
       id: meta
       uses: docker/metadata-action@v4
-      if: ${{ inputs.build == 'true' }}
       with:
         images: ${{ steps.build_image_names.outputs.names }}
         flavor: |
