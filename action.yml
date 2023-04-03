@@ -112,6 +112,10 @@ inputs:
     description: "whether to upload the docker image as gh artifact"
     required: false
     default: "false"
+  gh_artifact_name:
+    description: "custom image name to upload the docker image as gh artifact"
+    required: false
+    default: "image"
 
   run_scanner:
     description: "Enables the sysdig security scanner"
@@ -293,6 +297,6 @@ runs:
       uses: actions/upload-artifact@v3
       if: ${{ inputs.upload_artifact == 'true' && inputs.build == 'true' }}
       with:
-        name: image
-        path: /tmp/image.tar
+        name: ${{ inputs.gh_artifact_name }}
+        path: /tmp/${{ inputs.gh_artifact_name }}.tar
         retention-days: 2
