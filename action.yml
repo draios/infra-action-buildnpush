@@ -291,7 +291,7 @@ runs:
         file: ${{ inputs.context_path }}/${{ inputs.dockerfile }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-        outputs: type=docker,dest=/tmp/image.tar
+        outputs: type=docker,dest=/tmp/${{ inputs.gh_artifact_name }}.tar
 
     - name: Upload image as github artifact
       uses: actions/upload-artifact@v3
