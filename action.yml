@@ -250,7 +250,7 @@ runs:
       with:
         context: ${{ inputs.context_path }}
         file: ${{ inputs.context_path }}/${{ inputs.dockerfile }}
-        build_args: ${{ inputs.build_args }}
+        build-args: ${{ inputs.build_args }}
         push: false
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
@@ -285,7 +285,7 @@ runs:
       with:
         context: ${{ inputs.context_path }}
         file: ${{ inputs.context_path }}/${{ inputs.dockerfile }}
-        build_args: ${{ inputs.build_args }}
+        build-args: ${{ inputs.build_args }}
         push: ${{ inputs.dry_run != 'true' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
@@ -296,7 +296,7 @@ runs:
       with:
         context: ${{ inputs.context_path }}
         file: ${{ inputs.context_path }}/${{ inputs.dockerfile }}
-        build_args: ${{ inputs.build_args }}
+        build-args: ${{ inputs.build_args }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         outputs: type=docker,dest=/tmp/${{ inputs.gh_artifact_name }}.tar
