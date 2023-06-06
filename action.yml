@@ -193,6 +193,13 @@ runs:
         username: _json_key
         password: ${{ inputs.gar_password }}
 
+    - name: "DEBUG"
+      shell: bash
+      run: |
+        echo "DEBUG - dry_run: ${{ inputs.dry_run }}"
+        echo "DEBUG - push: ${{ inputs.push }}"
+        echo "DEBUG - expression: ${{ inputs.dry_run || inputs.push == 'false' }}"
+
 # Bump version and create git tag
     - name: Bump container version and create new github tag
       id: bump_version
