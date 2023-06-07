@@ -198,7 +198,7 @@ runs:
       run: |
         echo "DEBUG - dry_run: ${{ inputs.dry_run }}"
         echo "DEBUG - push: ${{ inputs.push }}"
-        echo "DEBUG - expression: ${{ inputs.dry_run || inputs.push == 'false' }}"
+        echo "DEBUG - expression: ${{ inputs.dry_run == 'true' || inputs.push == 'false' }}"
 
 # Bump version and create git tag
     - name: Bump container version and create new github tag
@@ -209,7 +209,7 @@ runs:
         tag_prefix: container/${{ inputs.image_name }}-
         fetch_all_tags: true
         # we must create a git tag only when pushing
-        dry_run: ${{ inputs.dry_run || inputs.push == 'false' }}
+        dry_run: ${{ inputs.dry_run == 'true' || inputs.push == 'false' }}
 
     - name: Build images names
       id: build_image_names
@@ -288,7 +288,7 @@ runs:
 
     - name: Push container
       uses: docker/build-push-action@v3
-      if: ${{ inputs.push == 'true' }}
+      if: ${{ inputs.push == 'true' && inputs.dry_run != 'true' }}
       with:
         context: ${{ inputs.context_path }}
         file: ${{ inputs.context_path }}/${{ inputs.dockerfile }}
