@@ -24,6 +24,11 @@ inputs:
     default: ""
     required: false
 
+  image_custom_tag:
+    description: "optional string that will be used as new image version, effectively preventing version bump"
+    default: ""
+    required: false
+
   context_path:
     description: "path to context directory (where the build starts)"
     required: true
@@ -205,6 +210,7 @@ runs:
       id: bump_version
       uses: mathieudutour/github-tag-action@v6.1
       with:
+        custom_tag: ${{ inputs.image_custom_tag }}
         github_token: ${{ inputs.github_token }}
         tag_prefix: container/${{ inputs.image_name }}-
         fetch_all_tags: true
