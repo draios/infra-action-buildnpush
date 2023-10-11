@@ -24,6 +24,11 @@ inputs:
     default: ""
     required: false
 
+  image_tag_string_prefix:
+    description: "optional string that will be added before the semver in the tag like: xxx/myimg:string-0.0.1 instead of xxx/myimg:0.0.1"
+    default: ""
+    required: false
+
   context_path:
     description: "path to context directory (where the build starts)"
     required: true
@@ -233,8 +238,9 @@ runs:
       shell: bash
       id: image_tag
       run: |
-        [[ -n "${{ inputs.image_tag_string_suffix }}" ]] && _ver=${{ steps.bump_version.outputs.new_version }}-${{ inputs.image_tag_string_suffix }} || _ver=${{ steps.bump_version.outputs.new_version }}
-        echo "ver=${_ver}" >> $GITHUB_OUTPUT
+        [[ -n "${{ inputs.image_tag_string_prefix }}" ]] && _prefix="${{ inputs.image_tag_string_prefix }}-" || _prefix=""
+        [[ -n "${{ inputs.image_tag_string_suffix }}" ]] && _suffix="-${{ inputs.image_tag_string_suffix }}" || _suffix=""
+        echo "ver=$_prefix}${_ver}${_suffix}" >> $GITHUB_OUTPUT
 
     - name: Build container meta
       id: meta
