@@ -242,7 +242,7 @@ runs:
       run: |
         [[ -n "${{ inputs.image_tag_string_prefix }}" ]] && _prefix="${{ inputs.image_tag_string_prefix }}-" || _prefix=""
         [[ -n "${{ inputs.image_tag_string_suffix }}" ]] && _suffix="-${{ inputs.image_tag_string_suffix }}" || _suffix=""
-        echo "ver=$_prefix}${_ver}${_suffix}" >> $GITHUB_OUTPUT
+        echo "ver=${_prefix}${{ steps.bump_version.outputs.new_version }}${_suffix}" >> $GITHUB_OUTPUT
 
     - name: Build container meta
       id: meta
