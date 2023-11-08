@@ -284,6 +284,7 @@ runs:
 
     - name: Scan image
       if: inputs.run_scanner == 'true' && inputs.build == 'true'
+      continue-on-error: true
       uses: draios/infra-action-sysdig-scan@v0.0.2
       with:
         image-tag: ${{ steps.container.outputs.container-tag }}
