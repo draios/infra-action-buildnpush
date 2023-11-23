@@ -29,6 +29,7 @@ GitHub Action for build and push docker images, Sysdig way
 
 ## Caveats
 
+- This action is using `mathieudutour/github-tag-action` in order to bump version and create a git tag. To determine the kind of version increment to apply, it needs to scan commits (see [commit convention](https://www.conventionalcommits.org/en/v1.0.0-beta.4/)). This [won't work](https://github.com/mathieudutour/github-tag-action/issues/86) if the action-triggering commit is created by a "Squash and merge".
 - If `artifactory_username`/`artifactory_password` tuple is empty the action will skip login to artifactory
 - If `quay_username`/`quay_password` tuple is empty the action will skip login to quay
 
