@@ -213,7 +213,7 @@ runs:
 
 # Bump version and create git tag
     - name: Bump container version and create new github tag
-      if: ! inputs.external_tag
+      if: ${{ ! inputs.external_tag }}
       id: bump_version
       uses: mathieudutour/github-tag-action@v1.0
       with:
@@ -242,7 +242,7 @@ runs:
     # In some edge cases we need to prepend and/or append a string
     # See "image_tag_string_suffix" or "image_tag_string_prefix" in inputs section
     - name: Add optional suffix and-or prefix to docker image tag
-      if: ! inputs.external_tag
+      if: ${{ ! inputs.external_tag }}
       shell: bash
       id: image_tag
       run: |
