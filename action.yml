@@ -31,7 +31,7 @@ inputs:
     required: false
 
   external_tag:
-    description: "external tag to use instead of the bumped version"
+    description: "use this provided tag instead of the having the action calculate it"
     required: false
 
   context_path:
