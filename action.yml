@@ -338,6 +338,7 @@ runs:
         push: ${{ inputs.dry_run != 'true' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+        platform: ${{ inputs.image_platforms }}
 
     - name: Save image to file
       uses: docker/build-push-action@v3
