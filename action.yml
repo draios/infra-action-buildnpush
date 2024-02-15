@@ -291,6 +291,19 @@ runs:
         labels: ${{ steps.meta.outputs.labels }}
         load: true
 
+    - name: Optional build container for other platforms
+      uses: docker/build-push-action@v3
+      if: ${{ inputs.build == 'true' && steps.alternative_platforms.outputs.result != '' }}
+      continue-on-error: true
+      with:
+        context: ${{ inputs.context_path }}
+        file: ${{ inputs.context_path }}/${{ inputs.dockerfile }}
+        build-args: ${{ inputs.build_args }}
+        push: ${{ inputs.dry_run != 'true' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        platforms: ${{ steps.alternative_platforms.outputs.result }}
+
     # Scan only one container name
     # This is needed because if you add/enable the push to quay.io, gar or artifactory (or all of them), there is a list of images with different registries.
     # Both are the same but we just need one to do the scanning. Usually artifactory is the first one of the list
@@ -325,19 +338,6 @@ runs:
         push: ${{ inputs.dry_run != 'true' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-
-    - name: Optional build container for other platforms
-      uses: docker/build-push-action@v3
-      if: ${{ inputs.build == 'true' && steps.alternative_platforms.outputs.result != '' }}
-      continue-on-error: true
-      with:
-        context: ${{ inputs.context_path }}
-        file: ${{ inputs.context_path }}/${{ inputs.dockerfile }}
-        build-args: ${{ inputs.build_args }}
-        push: ${{ inputs.dry_run != 'true' }}
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        platforms: ${{ steps.alternative_platforms.outputs.result }}
 
     - name: Save image to file
       uses: docker/build-push-action@v3
