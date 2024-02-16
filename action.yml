@@ -281,7 +281,7 @@ runs:
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         load: true
-        platform: ${{ inputs.image_platforms }}
+        platforms: ${{ inputs.image_platforms }}
 
     # Scan only one container name
     # This is needed because if you add/enable the push to quay.io, gar or artifactory (or all of them), there is a list of images with different registries.
@@ -317,7 +317,7 @@ runs:
         push: ${{ inputs.dry_run != 'true' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-        platform: ${{ inputs.image_platforms }}
+        platforms: ${{ inputs.image_platforms }}
 
     - name: Save image to file
       uses: docker/build-push-action@v3
