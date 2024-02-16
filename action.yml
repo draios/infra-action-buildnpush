@@ -255,15 +255,6 @@ runs:
         [[ -n "${{ inputs.image_tag_string_suffix }}" ]] && _suffix="-${{ inputs.image_tag_string_suffix }}" || _suffix=""
         echo "ver=${_prefix}${{ steps.bump_version.outputs.new_version }}${_suffix}" >> $GITHUB_OUTPUT
 
-    - name: Check alternative platforms and strip amd64
-      if: ${{ inputs.build == 'true' && inputs.image_platforms != '' }}
-      shell: bash
-      id: alternative_platforms
-      run: |
-        [[ -n "${{ inputs.image_platforms }}" ]] && _altplatforms=$(echo ${{ inputs.image_platforms }} | sed 's/linux\/amd64,//') || echo "No alternative platforms specified"
-        echo "DEBUG=${_altplatforms}"
-        echo "result=${_altplatforms}" >> $GITHUB_OUTPUT
-
     - name: Build container meta
       id: meta
       uses: docker/metadata-action@v4
@@ -290,19 +281,7 @@ runs:
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         load: true
-
-    - name: Optional build container for other platforms
-      uses: docker/build-push-action@v3
-      if: ${{ inputs.build == 'true' && steps.alternative_platforms.outputs.result != '' }}
-      continue-on-error: true
-      with:
-        context: ${{ inputs.context_path }}
-        file: ${{ inputs.context_path }}/${{ inputs.dockerfile }}
-        build-args: ${{ inputs.build_args }}
-        push: ${{ inputs.dry_run != 'true' }}
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        platforms: ${{ steps.alternative_platforms.outputs.result }}
+        platform: ${{ inputs.image_platforms }}
 
     # Scan only one container name
     # This is needed because if you add/enable the push to quay.io, gar or artifactory (or all of them), there is a list of images with different registries.
