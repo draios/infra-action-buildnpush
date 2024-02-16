@@ -281,7 +281,6 @@ runs:
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         load: true
-        platforms: ${{ inputs.image_platforms }}
 
     # Scan only one container name
     # This is needed because if you add/enable the push to quay.io, gar or artifactory (or all of them), there is a list of images with different registries.
