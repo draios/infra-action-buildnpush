@@ -183,7 +183,7 @@ runs:
       id: platforms_list
       # This will trim whitespace and remove duplicates if specified, espcially if the user has specified linux/amd64
       run: |
-        [[ -n "${alternate_platform}" ]] && platform_list_temp="linux/amd64,${alternate_platform} || platform_list_temp="linux/amd64"
+        [[ -n "${{ inputs.alternate_platforms }}" ]] && platform_list_temp="linux/amd64,${{ inputs.alternate_platforms }}" || platform_list_temp="linux/amd64"
         final_platforms_list=$(echo $platform_list_temp | tr -d ' ' | tr ',' '\n' | sort | uniq | paste -sd ',' -)
         echo "image_platforms=${final_platforms_list}" >> $GITHUB_OUTPUT
 
