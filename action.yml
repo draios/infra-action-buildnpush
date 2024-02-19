@@ -183,9 +183,8 @@ runs:
       id: platforms_list
       # This will trim whitespace and remove duplicates if specified, espcially if the user has specified linux/amd64
       run: |
-        alternate_platform=$(echo ${{ inputs.alternate_platforms }} | tr -d ' ')
         [[ -n "${alternate_platform}" ]] && platform_list_temp="linux/amd64,${alternate_platform} || platform_list_temp="linux/amd64"
-        final_platforms_list=$(echo $platform_list_temp | tr ',' '\n' | sort | uniq | paste -sd ',' -)
+        final_platforms_list=$(echo $platform_list_temp | tr -d ' ' | tr ',' '\n' | sort | uniq | paste -sd ',' -)
         echo "image_platforms=${final_platforms_list}" >> $GITHUB_OUTPUT
 
     - name: Set up Docker Buildx
