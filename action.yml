@@ -30,8 +30,8 @@ inputs:
     default: ""
     required: false
 
-  image_platforms:
-    description: "optional additional architectures -comma separated- (right now only linux/amd64 and linux/arm64 are supported)"
+  alternate_platforms:
+    description: "optional additional architectures -comma separated- (right now only linux/amd64 and linux/arm64 are supported), linux/amd64 is always set"
     required: false
 
   external_tag:
@@ -177,12 +177,22 @@ runs:
       shell: bash
       run: if ! (docker context ls | grep -q mycontext) ;then docker context create mycontext; fi
 
+    - name: Creating list of platforms for Image build
+      if: ${{ inputs.build == 'true' }}
+      shell: bash
+      id: platforms_list
+      # This will remove duplicates if specified, espcially if the user has specified linux/amd64
+      run: |
+        [[ -n "${{ inputs.alternate_platforms }}" ]] && platform_list_temp="linux/amd64,${{ inputs.alternate_platforms }}" || platform_list_temp="linux/amd64"
+        final_platforms_list=$(echo $platform_list_temp | tr ',' '\n' | sort | uniq | paste -sd ',' -)
+        echo "image_platforms=${final_platforms_list}" >> $GITHUB_OUTPUT
+
     - name: Set up Docker Buildx
       id: buildx
       uses: docker/setup-buildx-action@v3
       with:
         endpoint: mycontext
-        platforms: ${{ inputs.image_platforms }}
+        platforms: ${{ steps.platforms_list.outputs.image_platforms }}
 
 # Login to registries
     - name: Login to Artifactory
@@ -316,7 +326,7 @@ runs:
         push: ${{ inputs.dry_run != 'true' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-        platforms: ${{ inputs.image_platforms }}
+        platforms: ${{ steps.platforms_list.outputs.image_platforms }}
 
     - name: Save image to file
       uses: docker/build-push-action@v3
