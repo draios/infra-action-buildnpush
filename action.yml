@@ -10,6 +10,7 @@ outputs:
   labels:
     description: "Labels added to container image"
     value: ${{ steps.meta.outputs.labels }}
+
 inputs:
   image_name:
     description: "name of the docker image. Example: redis-6"
@@ -24,6 +25,19 @@ inputs:
     default: ""
     required: false
 
+  image_tag_string_prefix:
+    description: "optional string that will be added before the semver in the tag like: xxx/myimg:string-0.0.1 instead of xxx/myimg:0.0.1"
+    default: ""
+    required: false
+
+  alternate_platforms:
+    description: "optional additional architectures -comma separated- (right now only linux/amd64 and linux/arm64 are supported), linux/amd64 is always set"
+    required: false
+
+  external_tag:
+    description: "use this provided tag instead of the having the action calculate it"
+    required: false
+
   context_path:
     description: "path to context directory (where the build starts)"
     required: true
@@ -32,6 +46,11 @@ inputs:
     description: "path to docker file (defaults to {{context_path}}/Dockerfile)"
     required: false
     default: Dockerfile
+
+  build_args:
+    description: "build_args to pass"
+    required: false
+    default: ""
 
   # Needed when run_scanner is true
   sysdig_secure_token:
@@ -43,14 +62,28 @@ inputs:
     description: "whether to actually create git tag and push the image"
     required: false
     default: "false"
+
+  push:
+    description: "exec the push phase (respecting dry_run flag)"
+    required: false
+    default: "true"
+
+  build:
+    description: "exec the build phase (respecting dry_run flag)"
+    required: false
+    default: "true"
+
   # flags for pushing to artifactory or quay
   push_to_artifactory:
+    description: "whether to push the image to artifactory"
     default: "true"
     required: false
   push_to_quay:
+    description: "whether to push the image to quay"
     default: "false"
     required: false
   push_to_gar:
+    description: "whether to push the image to gar"
     default: "false"
     required: false
 
@@ -99,6 +132,10 @@ inputs:
     description: "whether to upload the docker image as gh artifact"
     required: false
     default: "false"
+  gh_artifact_name:
+    description: "custom image name to upload the docker image as gh artifact"
+    required: false
+    default: "image"
 
   run_scanner:
     description: "Enables the sysdig security scanner"
@@ -133,19 +170,31 @@ runs:
   steps:
     - uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: '3.11'
 
     # NOTE: the following workaround is needed to explicitly set up the context for buildx when running on DinD
     - name: Custom docker context for use with self_hosted runners
       shell: bash
       run: if ! (docker context ls | grep -q mycontext) ;then docker context create mycontext; fi
 
+    - name: Creating list of platforms for Image build
+      if: ${{ inputs.build == 'true' }}
+      shell: bash
+      id: platforms_list
+      # This will trim whitespace and remove duplicates if specified, espcially if the user has specified linux/amd64
+      run: |
+        [[ -n "${{ inputs.alternate_platforms }}" ]] && platform_list_temp="linux/amd64,${{ inputs.alternate_platforms }}" || platform_list_temp="linux/amd64"
+        final_platforms_list=$(echo $platform_list_temp | tr -d ' ' | tr ',' '\n' | sort | uniq | paste -sd ',' -)
+        echo "image_platforms=${final_platforms_list}" >> $GITHUB_OUTPUT
+
     - name: Set up Docker Buildx
       id: buildx
-      uses: docker/setup-buildx-action@v2
+      uses: docker/setup-buildx-action@v3
       with:
         endpoint: mycontext
+        platforms: ${{ steps.platforms_list.outputs.image_platforms }}
 
+# Login to registries
     - name: Login to Artifactory
       uses: docker/login-action@v2
       if: ${{inputs.artifactory_username != '' && inputs.artifactory_password != '' }}
@@ -170,14 +219,24 @@ runs:
         username: _json_key
         password: ${{ inputs.gar_password }}
 
+    - name: "DEBUG"
+      shell: bash
+      run: |
+        echo "DEBUG - dry_run: ${{ inputs.dry_run }}"
+        echo "DEBUG - push: ${{ inputs.push }}"
+        echo "DEBUG - expression: ${{ inputs.dry_run == 'true' || inputs.push == 'false' }}"
+
+# Bump version and create git tag
     - name: Bump container version and create new github tag
+      if: ${{ ! inputs.external_tag }}
       id: bump_version
-      uses: mathieudutour/github-tag-action@v6.1
+      uses: mathieudutour/github-tag-action@v1.0
       with:
         github_token: ${{ inputs.github_token }}
         tag_prefix: container/${{ inputs.image_name }}-
         fetch_all_tags: true
-        dry_run: ${{ inputs.dry_run }}
+        # we must create a git tag only when pushing
+        dry_run: ${{ inputs.dry_run == 'true' || inputs.push == 'false' }}
 
     - name: Build images names
       id: build_image_names
@@ -195,14 +254,16 @@ runs:
         echo "names=${names}" >> $GITHUB_OUTPUT
 
     # By default the img tag is the bumped version of the last tag
-    # In some edge cases we need to append a string
-    # See "image_tag_string_suffix" in inputs section
-    - name: Add optional string suffix in img tag
+    # In some edge cases we need to prepend and/or append a string
+    # See "image_tag_string_suffix" or "image_tag_string_prefix" in inputs section
+    - name: Add optional suffix and-or prefix to docker image tag
+      if: ${{ ! inputs.external_tag }}
       shell: bash
       id: image_tag
       run: |
-        [[ -n "${{ inputs.image_tag_string_suffix }}" ]] && _ver=${{ steps.bump_version.outputs.new_version }}-${{ inputs.image_tag_string_suffix }} || _ver=${{ steps.bump_version.outputs.new_version }}
-        echo "ver=${_ver}" >> $GITHUB_OUTPUT
+        [[ -n "${{ inputs.image_tag_string_prefix }}" ]] && _prefix="${{ inputs.image_tag_string_prefix }}-" || _prefix=""
+        [[ -n "${{ inputs.image_tag_string_suffix }}" ]] && _suffix="-${{ inputs.image_tag_string_suffix }}" || _suffix=""
+        echo "ver=${_prefix}${{ steps.bump_version.outputs.new_version }}${_suffix}" >> $GITHUB_OUTPUT
 
     - name: Build container meta
       id: meta
@@ -217,13 +278,15 @@ runs:
           org.opencontainers.image.title=${{ inputs.image_name }}
           org.opencontainers.image.description=${{ inputs.image_description }}
         tags: |
-          type=raw,value=${{ steps.image_tag.outputs.ver }}
+          type=raw,value=${{ inputs.external_tag || steps.image_tag.outputs.ver }}
 
     - name: Build container
       uses: docker/build-push-action@v4
+      if: ${{ inputs.build == 'true' }}
       with:
         context: ${{ inputs.context_path }}
         file: ${{ inputs.context_path }}/${{ inputs.dockerfile }}
+        build-args: ${{ inputs.build_args }}
         push: false
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
@@ -233,7 +296,7 @@ runs:
     # This is needed because if you add/enable the push to quay.io, gar or artifactory (or all of them), there is a list of images with different registries.
     # Both are the same but we just need one to do the scanning. Usually artifactory is the first one of the list
     - name: Local container tag
-      if: inputs.run_scanner == 'true'
+      if: inputs.run_scanner == 'true' && inputs.build == 'true'
       shell: bash
       id: container
       run: |
@@ -241,7 +304,8 @@ runs:
         echo "container-tag=${CONTAINER_TAG}" >> $GITHUB_OUTPUT
 
     - name: Scan image
-      if: inputs.run_scanner == 'true'
+      if: inputs.run_scanner == 'true' && inputs.build == 'true'
+      continue-on-error: true
       uses: draios/infra-action-sysdig-scan@v0.0.2
       with:
         image-tag: ${{ steps.container.outputs.container-tag }}
@@ -254,27 +318,31 @@ runs:
 
     - name: Push container
       uses: docker/build-push-action@v4
+      if: ${{ inputs.push == 'true' && inputs.dry_run != 'true' }}
       with:
         context: ${{ inputs.context_path }}
         file: ${{ inputs.context_path }}/${{ inputs.dockerfile }}
+        build-args: ${{ inputs.build_args }}
         push: ${{ inputs.dry_run != 'true' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+        platforms: ${{ steps.platforms_list.outputs.image_platforms }}
 
-    - name: Load image to file
-      uses: docker/build-push-action@v4
-      if: ${{ inputs.upload_artifact == 'true' }}
+    - name: Save image to file
+      uses: docker/build-push-action@v3
+      if: ${{ inputs.upload_artifact == 'true' && inputs.build == 'true' }}
       with:
         context: ${{ inputs.context_path }}
         file: ${{ inputs.context_path }}/${{ inputs.dockerfile }}
+        build-args: ${{ inputs.build_args }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-        outputs: type=docker,dest=/tmp/image.tar
+        outputs: type=docker,dest=/tmp/${{ inputs.gh_artifact_name }}.tar
 
-    - name: Upload docker image as artifact
+    - name: Upload image as github artifact
       uses: actions/upload-artifact@v3
-      if: ${{ inputs.upload_artifact == 'true' }}
+      if: ${{ inputs.upload_artifact == 'true' && inputs.build == 'true' }}
       with:
-        name: image
-        path: /tmp/image.tar
+        name: ${{ inputs.gh_artifact_name }}
+        path: /tmp/${{ inputs.gh_artifact_name }}.tar
         retention-days: 2
