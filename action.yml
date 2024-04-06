@@ -10,6 +10,7 @@ outputs:
   labels:
     description: "Labels added to container image"
     value: ${{ steps.meta.outputs.labels }}
+
 inputs:
   image_name:
     description: "name of the docker image. Example: redis-6"
@@ -22,6 +23,19 @@ inputs:
   image_tag_string_suffix:
     description: "optional string that will be added after the semver in the tag like: xxx/myimg:0.0.1-string instead of xxx/myimg:0.0.1"
     default: ""
+    required: false
+
+  image_tag_string_prefix:
+    description: "optional string that will be added before the semver in the tag like: xxx/myimg:string-0.0.1 instead of xxx/myimg:0.0.1"
+    default: ""
+    required: false
+
+  alternate_platforms:
+    description: "optional additional architectures -comma separated- (right now only linux/amd64 and linux/arm64 are supported), linux/amd64 is always set"
+    required: false
+
+  external_tag:
+    description: "use this provided tag instead of the having the action calculate it"
     required: false
 
   context_path:
@@ -42,6 +56,7 @@ inputs:
   sysdig_secure_token:
     description: "API token for Sysdig Scanning auth"
     required: false
+
   # wether to create git tag and push the image
   dry_run:
     description: "whether to actually create git tag and push the image"
@@ -162,11 +177,22 @@ runs:
       shell: bash
       run: if ! (docker context ls | grep -q mycontext) ;then docker context create mycontext; fi
 
+    - name: Creating list of platforms for Image build
+      if: ${{ inputs.build == 'true' }}
+      shell: bash
+      id: platforms_list
+      # This will trim whitespace and remove duplicates if specified, espcially if the user has specified linux/amd64
+      run: |
+        [[ -n "${{ inputs.alternate_platforms }}" ]] && platform_list_temp="linux/amd64,${{ inputs.alternate_platforms }}" || platform_list_temp="linux/amd64"
+        final_platforms_list=$(echo $platform_list_temp | tr -d ' ' | tr ',' '\n' | sort | uniq | paste -sd ',' -)
+        echo "image_platforms=${final_platforms_list}" >> $GITHUB_OUTPUT
+
     - name: Set up Docker Buildx
       id: buildx
-      uses: docker/setup-buildx-action@v2
+      uses: docker/setup-buildx-action@v3
       with:
         endpoint: mycontext
+        platforms: ${{ steps.platforms_list.outputs.image_platforms }}
 
 # Login to registries
     - name: Login to Artifactory
@@ -202,8 +228,9 @@ runs:
 
 # Bump version and create git tag
     - name: Bump container version and create new github tag
+      if: ${{ ! inputs.external_tag }}
       id: bump_version
-      uses: mathieudutour/github-tag-action@v6.1
+      uses: mathieudutour/github-tag-action@v1.0
       with:
         github_token: ${{ inputs.github_token }}
         tag_prefix: container/${{ inputs.image_name }}-
@@ -227,14 +254,16 @@ runs:
         echo "names=${names}" >> $GITHUB_OUTPUT
 
     # By default the img tag is the bumped version of the last tag
-    # In some edge cases we need to append a string
-    # See "image_tag_string_suffix" in inputs section
-    - name: Add optional string suffix in img tag
+    # In some edge cases we need to prepend and/or append a string
+    # See "image_tag_string_suffix" or "image_tag_string_prefix" in inputs section
+    - name: Add optional suffix and-or prefix to docker image tag
+      if: ${{ ! inputs.external_tag }}
       shell: bash
       id: image_tag
       run: |
-        [[ -n "${{ inputs.image_tag_string_suffix }}" ]] && _ver=${{ steps.bump_version.outputs.new_version }}-${{ inputs.image_tag_string_suffix }} || _ver=${{ steps.bump_version.outputs.new_version }}
-        echo "ver=${_ver}" >> $GITHUB_OUTPUT
+        [[ -n "${{ inputs.image_tag_string_prefix }}" ]] && _prefix="${{ inputs.image_tag_string_prefix }}-" || _prefix=""
+        [[ -n "${{ inputs.image_tag_string_suffix }}" ]] && _suffix="-${{ inputs.image_tag_string_suffix }}" || _suffix=""
+        echo "ver=${_prefix}${{ steps.bump_version.outputs.new_version }}${_suffix}" >> $GITHUB_OUTPUT
 
     - name: Build container meta
       id: meta
@@ -249,7 +278,7 @@ runs:
           org.opencontainers.image.title=${{ inputs.image_name }}
           org.opencontainers.image.description=${{ inputs.image_description }}
         tags: |
-          type=raw,value=${{ steps.image_tag.outputs.ver }}
+          type=raw,value=${{ inputs.external_tag || steps.image_tag.outputs.ver }}
 
     - name: Build container
       uses: docker/build-push-action@v3
@@ -276,6 +305,7 @@ runs:
 
     - name: Scan image
       if: inputs.run_scanner == 'true' && inputs.build == 'true'
+      continue-on-error: true
       uses: draios/infra-action-sysdig-scan@v0.0.2
       with:
         image-tag: ${{ steps.container.outputs.container-tag }}
@@ -296,6 +326,7 @@ runs:
         push: ${{ inputs.dry_run != 'true' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+        platforms: ${{ steps.platforms_list.outputs.image_platforms }}
 
     - name: Save image to file
       uses: docker/build-push-action@v3
