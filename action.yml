@@ -30,6 +30,14 @@ inputs:
     default: ""
     required: false
 
+  alternate_platforms:
+    description: "optional additional architectures -comma separated- (right now only linux/amd64 and linux/arm64 are supported), linux/amd64 is always set"
+    required: false
+
+  external_tag:
+    description: "use this provided tag instead of the having the action calculate it"
+    required: false
+
   context_path:
     description: "path to context directory (where the build starts)"
     required: true
@@ -174,11 +182,22 @@ runs:
       shell: bash
       run: if ! (docker context ls | grep -q mycontext) ;then docker context create mycontext; fi
 
+    - name: Creating list of platforms for Image build
+      if: ${{ inputs.build == 'true' }}
+      shell: bash
+      id: platforms_list
+      # This will trim whitespace and remove duplicates if specified, espcially if the user has specified linux/amd64
+      run: |
+        [[ -n "${{ inputs.alternate_platforms }}" ]] && platform_list_temp="linux/amd64,${{ inputs.alternate_platforms }}" || platform_list_temp="linux/amd64"
+        final_platforms_list=$(echo $platform_list_temp | tr -d ' ' | tr ',' '\n' | sort | uniq | paste -sd ',' -)
+        echo "image_platforms=${final_platforms_list}" >> $GITHUB_OUTPUT
+
     - name: Set up Docker Buildx
       id: buildx
-      uses: docker/setup-buildx-action@v2
+      uses: docker/setup-buildx-action@v3
       with:
         endpoint: mycontext
+        platforms: ${{ steps.platforms_list.outputs.image_platforms }}
 
 # Login to registries
     - name: Login to Artifactory
@@ -214,8 +233,9 @@ runs:
 
 # Bump version and create git tag
     - name: Bump container version and create new github tag
+      if: ${{ ! inputs.external_tag }}
       id: bump_version
-      uses: mathieudutour/github-tag-action@v6.1
+      uses: mathieudutour/github-tag-action@v1.0
       with:
         github_token: ${{ inputs.github_token }}
         tag_prefix: container/${{ inputs.image_name }}-
@@ -242,6 +262,7 @@ runs:
     # In some edge cases we need to prepend and/or append a string
     # See "image_tag_string_suffix" or "image_tag_string_prefix" in inputs section
     - name: Add optional suffix and-or prefix to docker image tag
+      if: ${{ ! inputs.external_tag }}
       shell: bash
       id: image_tag
       run: |
@@ -262,7 +283,7 @@ runs:
           org.opencontainers.image.title=${{ inputs.image_name }}
           org.opencontainers.image.description=${{ inputs.image_description }}
         tags: |
-          type=raw,value=${{ steps.image_tag.outputs.ver }}
+          type=raw,value=${{ inputs.external_tag || steps.image_tag.outputs.ver }}
 
     - name: Build container
       uses: docker/build-push-action@v3
@@ -290,6 +311,7 @@ runs:
 
     - name: Scan image
       if: inputs.run_scanner == 'true' && inputs.build == 'true'
+      continue-on-error: true
       uses: draios/infra-action-sysdig-scan@v0.0.2
       with:
         image-tag: ${{ steps.container.outputs.container-tag }}
@@ -310,6 +332,7 @@ runs:
         push: ${{ inputs.dry_run != 'true' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+        platforms: ${{ steps.platforms_list.outputs.image_platforms }}
 
     - name: Save image to file
       uses: docker/build-push-action@v3
