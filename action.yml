@@ -281,7 +281,7 @@ runs:
           type=raw,value=${{ inputs.external_tag || steps.image_tag.outputs.ver }}
 
     - name: Build container
-      uses: docker/build-push-action@v3
+      uses: docker/build-push-action@v4
       if: ${{ inputs.build == 'true' }}
       with:
         context: ${{ inputs.context_path }}
@@ -317,7 +317,7 @@ runs:
         policy-list: ${{ inputs.policy-list }}
 
     - name: Push container
-      uses: docker/build-push-action@v3
+      uses: docker/build-push-action@v4
       if: ${{ inputs.push == 'true' && inputs.dry_run != 'true' }}
       with:
         context: ${{ inputs.context_path }}
