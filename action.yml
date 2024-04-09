@@ -1,11 +1,11 @@
-name: 'Build And Push'
-description: GitHub Action for build and push docker images - Sysdig way'
+name: "Build And Push"
+description: GitHub Action for build and push docker images - Sysdig way
 outputs:
   names:
     description: "Image names"
     value: ${{ steps.build_image_names.outputs.names }}
   tags:
-    description: "git tag version calculated"
+    description: "Git tag version calculated"
     value: ${{ steps.meta.outputs.tags }}
   labels:
     description: "Labels added to container image"
@@ -51,6 +51,11 @@ inputs:
     description: "build_args to pass"
     required: false
     default: ""
+
+  provenance:
+    description: "build single image without extra unknown/unknown platform tags"
+    required: false
+    default: "false"
 
   # Needed when run_scanner is true
   sysdig_secure_token:
@@ -291,6 +296,7 @@ runs:
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         load: true
+        provenance: ${{ inputs.provenance }}
 
     # Scan only one container name
     # This is needed because if you add/enable the push to quay.io, gar or artifactory (or all of them), there is a list of images with different registries.
@@ -327,6 +333,7 @@ runs:
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         platforms: ${{ steps.platforms_list.outputs.image_platforms }}
+        provenance: ${{ inputs.provenance }}
 
     - name: Save image to file
       uses: docker/build-push-action@v3
