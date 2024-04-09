@@ -235,7 +235,7 @@ runs:
     - name: Bump container version and create new github tag
       if: ${{ ! inputs.external_tag }}
       id: bump_version
-      uses: mathieudutour/github-tag-action@v1.0
+      uses: mathieudutour/github-tag-action@v6.2
       with:
         github_token: ${{ inputs.github_token }}
         tag_prefix: container/${{ inputs.image_name }}-
