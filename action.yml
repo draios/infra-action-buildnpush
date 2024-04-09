@@ -333,6 +333,7 @@ runs:
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         platforms: ${{ steps.platforms_list.outputs.image_platforms }}
+        provenance: ${{ inputs.provenance }}
 
     - name: Save image to file
       uses: docker/build-push-action@v3
