@@ -201,7 +201,7 @@ runs:
 
 # Login to registries
     - name: Login to Artifactory
-      uses: docker/login-action@v2
+      uses: docker/login-action@v3
       if: ${{inputs.artifactory_username != '' && inputs.artifactory_password != '' }}
       with:
         registry: ${{ inputs.artifactory_url }}
@@ -209,7 +209,7 @@ runs:
         password: ${{ inputs.artifactory_password }}
 
     - name: Login to Quay
-      uses: docker/login-action@v2
+      uses: docker/login-action@v3
       if: ${{inputs.quay_username != '' && inputs.quay_password != ''  }}
       with:
         registry: quay.io
@@ -217,7 +217,7 @@ runs:
         password: ${{ inputs.quay_password }}
 
     - name: Login to GAR
-      uses: docker/login-action@v2
+      uses: docker/login-action@v3
       if: ${{inputs.gar_password != '' }}
       with:
         registry: ${{ inputs.gar_prefix }}
