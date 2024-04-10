@@ -193,8 +193,11 @@ runs:
         echo "image_platforms=${final_platforms_list}" >> $GITHUB_OUTPUT
 
     - name: Set up QEMU
+      if: ${{ steps.platforms_list.outputs.image_platforms != "linux/amd64" }}
       id: qemu
       uses: docker/setup-qemu-action@v3.3.0
+      with:
+        platforms: ${{ steps.platforms_list.outputs.image_platforms }}
 
     - name: Set up Docker Buildx
       id: buildx
