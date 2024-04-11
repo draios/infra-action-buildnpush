@@ -354,7 +354,7 @@ runs:
         outputs: type=docker,dest=/tmp/${{ inputs.gh_artifact_name }}.tar
 
     - name: Upload image as github artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: ${{ inputs.upload_artifact == 'true' && inputs.build == 'true' }}
       with:
         name: ${{ inputs.gh_artifact_name }}
