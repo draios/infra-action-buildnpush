@@ -38,7 +38,7 @@ inputs:
     description: "use this tag instead of having the action calculate it"
     required: false
 
-  is_latest:
+  latest_tag:
     description: "generate `latest` tag for the image"
     required: false
     default: "false"
@@ -288,7 +288,7 @@ runs:
       with:
         images: ${{ steps.build_image_names.outputs.names }}
         flavor: |
-          latest=${{ inputs.is_latest }}
+          latest=${{ inputs.latest_tag }}
           prefix=
           suffix=
         labels: |
