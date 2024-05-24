@@ -35,8 +35,13 @@ inputs:
     required: false
 
   external_tag:
-    description: "use this provided tag instead of the having the action calculate it"
+    description: "use this tag instead of having the action calculate it"
     required: false
+
+  latest_tag:
+    description: "generate `latest` tag for the image"
+    required: false
+    default: "false"
 
   context_path:
     description: "path to context directory (where the build starts)"
@@ -283,7 +288,7 @@ runs:
       with:
         images: ${{ steps.build_image_names.outputs.names }}
         flavor: |
-          latest=auto
+          latest=${{ inputs.latest_tag }}
           prefix=
           suffix=
         labels: |
