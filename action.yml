@@ -86,7 +86,7 @@ inputs:
   # flags for pushing to artifactory or quay
   push_to_artifactory:
     description: "whether to push the image to artifactory"
-    default: "true"
+    default: "false"
     required: false
   push_to_quay:
     description: "whether to push the image to quay"
