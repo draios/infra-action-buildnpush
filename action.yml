@@ -83,7 +83,7 @@ inputs:
     required: false
     default: "true"
 
-  # flags for pushing to artifactory or quay
+  # flags for pushing to GAR, artifactory or quay
   push_to_artifactory:
     description: "whether to push the image to artifactory"
     default: "false"
@@ -94,7 +94,7 @@ inputs:
     required: false
   push_to_gar:
     description: "whether to push the image to gar"
-    default: "false"
+    default: "true"
     required: false
 
   artifactory_prefix:
@@ -133,7 +133,7 @@ inputs:
   gar_password:
     description: "GAR Password Secret"
     default: ""
-    required: false
+    required: true
   github_token:
     description: "GITHUB Token used to tag the repo"
     required: true
