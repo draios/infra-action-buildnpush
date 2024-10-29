@@ -17,10 +17,12 @@ GitHub Action for build and push docker images, Sysdig way
 - `dry_run`: whether to actually create git tag and push the image (default: false)
 - `external_tag`: use this tag instead of having the action calculate it
 - `latest_tag`: "generate `latest` tag for the image". Default: `false`
-- `push_to_artifactory`: whether push image to artifactory (default: true)
+- `push_to_artifactory`: whether push image to artifactory (default: false)
 - `push_to_quay`: whether push image to quay.io (default: false)
+- `push_to_gar`: whether push image to GAR (default: true)
 - `artifactory_prefix`: prefix for artifactory repository. Default: `docker.internal.sysdig.com`
 - `quay_prefix`: prefix for quay repository. Default: `quay.io/sysdig`
+- `gar_prefix`: prefix for GAR repository. Default: `us-docker.pkg.dev/sysdig-artifact-registry-dev/gar-docker/infra`
 
 - `artifactory_username`: "Artifactory Username Secret (default is empty string) "
 - `artifactory_password`: "Artifactory Password Secret (default is empty string)"
@@ -29,10 +31,13 @@ GitHub Action for build and push docker images, Sysdig way
 - `quay_username`: "Quay Username Secret (default is empty string)"
 - `quay_password`: "Quay Password Secret (default is empty string)"
 
+- `gar_password`: "GAR Password Secret (default is empty string)"
+
 ## Caveats
 
 - If `artifactory_username`/`artifactory_password` tuple is empty the action will skip login to artifactory
 - If `quay_username`/`quay_password` tuple is empty the action will skip login to quay
+- If `gar_password` value is empty the action will skip login to GAR
 
 ## Outputs
 
@@ -81,8 +86,8 @@ jobs:
         context_path: "containers/redis"
         dockerfile: "Dockerfile"
         dry_run: ${{ ! ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'false')) }}
-        artifactory_username: ${{ secrets.ARTIFACTORY_USERNAME }}
-        artifactory_password: ${{ secrets.ARTIFACTORY_PASSWORD }}
+        gar_prefix: "us-docker.pkg.dev/sysdig-artifact-registry-dev/gar-docker/infra"
+        gar_password: ${{ secrets.GAR_PASSWORD }}
         quay_username: ${{ secrets.QUAY_USERNAME }}
         quay_password: ${{ secrets.QUAY_PASSWORD }}
         github_token: ${{ secrets.GITHUB_TOKEN }}
