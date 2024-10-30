@@ -17,6 +17,7 @@ GitHub Action for build and push docker images, Sysdig way
 - `dry_run`: whether to actually create git tag and push the image (default: false)
 - `external_tag`: use this tag instead of having the action calculate it
 - `latest_tag`: "generate `latest` tag for the image". Default: `false`
+- `file_paths`: glob pattern list. These should be the paths that trigger this specific action. Useful in a monorepo, to have action-auto-tag properly bump the version. Due to limitations with GitHub Actions inputs, this is specified as a string. Default: ''
 - `push_to_artifactory`: whether push image to artifactory (default: false)
 - `push_to_quay`: whether push image to quay.io (default: false)
 - `push_to_gar`: whether push image to GAR (default: true)

@@ -43,6 +43,11 @@ inputs:
     required: false
     default: "false"
 
+  file_paths:
+    description: "glob pattern list. These should be the paths that trigger this specific action. Usefull in a monorepo, to have action-auto-tag properly bump the version. Due to limitations with GitHub Actions inputs, this is specified as a string."
+    required: false
+    default: ''
+
   context_path:
     description: "path to context directory (where the build starts)"
     required: true
@@ -247,12 +252,10 @@ runs:
     - name: Bump container version and create new github tag
       if: ${{ ! inputs.external_tag }}
       id: bump_version
-      uses: mathieudutour/github-tag-action@v6.2
+      uses: panepan83/action-auto-tag@v1
       with:
-        github_token: ${{ inputs.github_token }}
         tag_prefix: container/${{ inputs.image_name }}-
-        fetch_all_tags: true
-        # we must create a git tag only when pushing
+        file_paths: ${{ inputs.file_paths }}
         dry_run: ${{ inputs.dry_run == 'true' || inputs.push == 'false' }}
 
     - name: Build images names
