@@ -151,7 +151,10 @@ inputs:
     description: "Enables the sysdig security scanner"
     required: false
     default: "false"
-
+  ignore_image_scan_failure:
+    description: "Ignore failures on image scan"
+    required: false
+    default: "true"
   scan_type:
     description: "The type of scan to perform"
     required: false
@@ -323,7 +326,7 @@ runs:
 
     - name: Scan image
       if: inputs.run_scanner == 'true' && inputs.build == 'true'
-      continue-on-error: true
+      continue-on-error: {{ inputs.ignore_image_scan_failure }}
       uses: draios/infra-action-sysdig-scan@v0.0.6
       with:
         image-tag: ${{ steps.container.outputs.container-tag }}
