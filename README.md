@@ -23,6 +23,7 @@ GitHub Action for build and push docker images, Sysdig way
 - `artifactory_prefix`: prefix for artifactory repository. Default: `docker.internal.sysdig.com`
 - `quay_prefix`: prefix for quay repository. Default: `quay.io/sysdig`
 - `gar_prefix`: prefix for GAR repository. Default: `us-docker.pkg.dev/sysdig-artifact-registry-dev/gar-docker/infra`
+- `ignore_image_scan_failure`: Ignore failures on image scan. Default: `true`
 
 - `artifactory_username`: "Artifactory Username Secret (default is empty string) "
 - `artifactory_password`: "Artifactory Password Secret (default is empty string)"
