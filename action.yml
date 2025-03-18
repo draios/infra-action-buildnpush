@@ -154,7 +154,7 @@ inputs:
   ignore_image_scan_failure:
     description: "Ignore failures on image scan"
     required: false
-    default: true
+    default: "true"
   scan_type:
     description: "The type of scan to perform"
     required: false
