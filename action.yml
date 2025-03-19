@@ -326,7 +326,9 @@ runs:
 
     - name: Scan image
       if: inputs.run_scanner == 'true' && inputs.build == 'true'
-      continue-on-error: ${{ inputs.ignore_image_scan_failure }}
+      env:
+        IMAGE_SCAN_CONTINUE_ON_ERROR: ${{ inputs.ignore_image_scan_failure }}
+      continue-on-error: ${{ fromJSON(env.IMAGE_SCAN_CONTINUE_ON_ERROR) }}
       uses: draios/infra-action-sysdig-scan@v0.0.6
       with:
         image-tag: ${{ steps.container.outputs.container-tag }}
